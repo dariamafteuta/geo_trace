@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
@@ -6,8 +7,9 @@ class DrawingPainter extends CustomPainter {
   final List<Offset> points;
   final double devicePixelRatio;
   final bool isPolygonClosed;
+  final int? activePointIndex;
 
-  DrawingPainter(this.points, this.devicePixelRatio, this.isPolygonClosed);
+  DrawingPainter(this.points, this.devicePixelRatio, this.isPolygonClosed, this.activePointIndex);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -15,7 +17,7 @@ class DrawingPainter extends CustomPainter {
       ..color = Colors.black
       ..strokeWidth = 7.0;
     final textPainter = TextPainter(textDirection: TextDirection.ltr);
-    const textStyle = TextStyle(color: Colors.black, fontSize: 14);
+    const textStyle = TextStyle(color: Colors.blue, fontSize: 14);
 
     if (points.isNotEmpty && isPolygonClosed) {
       final path = Path()..addPolygon(points, true);
@@ -60,6 +62,11 @@ class DrawingPainter extends CustomPainter {
       }
     }
 
+    if (activePointIndex != null && activePointIndex! < points.length) {
+      final activePoint = points[activePointIndex!];
+      _drawIconAtPoint(canvas, activePoint);
+    }
+
     for (int i = 0; i < points.length - 1; i++) {
       canvas.drawLine(points[i], points[i + 1], paint);
 
@@ -94,6 +101,7 @@ class DrawingPainter extends CustomPainter {
     if (!isPolygonClosed && points.isNotEmpty) {
       final lastPoint = points.last;
 
+      _drawIconAtPoint(canvas, lastPoint);
       const icon = Icons.open_with;
       TextSpan span = TextSpan(
         style: TextStyle(
@@ -130,6 +138,31 @@ class DrawingPainter extends CustomPainter {
       canvas.drawCircle(point, 7.0, pointPaint);
       canvas.drawCircle(point, 7.0, pointOutlinePaint);
     }
+  }
+
+  void _drawIconAtPoint(Canvas canvas, Offset point) {
+    const icon = Icons.open_with;
+    TextSpan span = TextSpan(
+      style: TextStyle(
+        fontSize: 50.0,
+        fontFamily: icon.fontFamily,
+        package: icon.fontPackage,
+        color: Colors.blue,
+      ),
+      text: String.fromCharCode(icon.codePoint),
+    );
+
+    TextPainter tp = TextPainter(
+      text: span,
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
+    );
+
+    tp.layout();
+
+    Offset iconPosition =
+    Offset(point.dx - tp.width / 2, point.dy - tp.height / 2);
+    tp.paint(canvas, iconPosition);
   }
 
   @override

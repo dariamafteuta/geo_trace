@@ -10,6 +10,32 @@ class DrawingBoard extends ConsumerWidget {
 
   DrawingBoard({super.key});
 
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pixelRatio = MediaQuery.of(context).devicePixelRatio;
+    final drawingState = ref.watch(drawingProvider2);
+
+    final List<Offset> points = drawingState.history.isNotEmpty &&
+            drawingState.history.length > drawingState.currentIndex
+        ? List<Offset>.from(drawingState.history[drawingState.currentIndex])
+        : [];
+
+    final activePointIndex = ref.watch(_activePointIndex);
+
+    return GestureDetector(
+      onPanStart: (details) => _onPanStart(context, details, ref),
+      onPanUpdate: (details) => _onPanUpdate(context, details, ref),
+      onTapUp: (details) => _onTapUp(context, details, ref, drawingState),
+      onPanEnd: (details) => _onPanEnd(context, details, ref),
+      child: CustomPaint(
+        size: Size.infinite,
+        painter: GridPainter(gridSpacing: 20.0),
+        foregroundPainter: DrawingPainter(
+            points, pixelRatio, drawingState.isPolygonClosed, activePointIndex),
+      ),
+    );
+  }
+
   void _onPanStart(
       BuildContext context, DragStartDetails details, WidgetRef ref) {
     final RenderBox renderBox = context.findRenderObject() as RenderBox;
@@ -55,25 +81,7 @@ class DrawingBoard extends ConsumerWidget {
     }
   }
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final pixelRatio = MediaQuery.of(context).devicePixelRatio;
-    final drawingState = ref.watch(drawingProvider2);
-
-    final List<Offset> points = drawingState.history.isNotEmpty &&
-            drawingState.history.length > drawingState.currentIndex
-        ? List<Offset>.from(drawingState.history[drawingState.currentIndex])
-        : [];
-
-    return GestureDetector(
-        onPanStart: (details) => _onPanStart(context, details, ref),
-        onPanUpdate: (details) => _onPanUpdate(context, details, ref),
-        onTapUp: (details) => _onTapUp(context, details, ref, drawingState),
-        child: CustomPaint(
-          size: Size.infinite,
-          painter: GridPainter(gridSpacing: 20.0),
-          foregroundPainter:
-              DrawingPainter(points, pixelRatio, drawingState.isPolygonClosed),
-        ));
+  void _onPanEnd(BuildContext context, DragEndDetails details, WidgetRef ref) {
+    ref.read(_activePointIndex.notifier).state = null;
   }
 }
